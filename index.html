@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<meta name="description" content="YT Finance - Personal Finance Dashboard">
+<link rel="manifest" href="manifest.webmanifest">
+<title>YT Finance</title>
+<style>
+:root{--bg:#080d18;--panel:#101a2b;--blue:#168cff;--text:#f3f7ff;--muted:#91a1b9;--red:#ff5b70;--green:#23d69b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#102748,#080d18 60%);color:var(--text);font-family:Arial,sans-serif;min-height:100vh}
+.container{max-width:1100px;margin:auto;padding:25px 18px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:30px}
+.logo{font-size:24px;font-weight:900;letter-spacing:1px}.logo span{color:var(--blue)}
+.tag{color:var(--muted);font-size:12px}
+h1{font-size:26px;margin:0 0 8px}
+.subtitle{color:var(--muted);margin-bottom:25px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card,.panel{background:linear-gradient(145deg,#14233a,#0d1625);border:1px solid #203653;border-radius:17px;padding:19px}
+.card small{color:var(--muted)}
+.amount{font-size:24px;font-weight:bold;margin-top:13px;direction:ltr;text-align:right}
+.blue{color:var(--blue)}.green{color:var(--green)}.red{color:var(--red)}
+.content{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+h2{font-size:17px;margin:0 0 18px}
+label{display:block;color:var(--muted);font-size:13px;margin:13px 0 7px}
+input,select{width:100%;padding:13px;background:#091322;border:1px solid #29415f;border-radius:10px;color:white;font-size:15px;outline:none}
+input:focus,select:focus{border-color:var(--blue)}
+button{border:0;border-radius:10px;padding:12px 17px;font-weight:bold;cursor:pointer}
+.primary{background:var(--blue);color:white;width:100%;margin-top:17px}
+.secondary{background:#1a2c45;color:white}
+.delete{background:#321b29;color:#ff8493;padding:8px 11px}
+.transactions{margin-top:18px}
+table{width:100%;border-collapse:collapse;text-align:right}
+th,td{padding:14px 9px;border-bottom:1px solid #24344b;font-size:13px}
+th{color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:30px}
+@media(max-width:750px){.cards{grid-template-columns:repeat(2,1fr)}.content{grid-template-columns:1fr}.amount{font-size:21px}.container{padding:20px 13px}}
+@media(max-width:360px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<div class="logo">YT <span>FINANCE</span></div>
+<div class="tag">PERSONAL FINANCIAL SYSTEM</div>
+</header>
+
+<h1>لوحة التحكم المالية</h1>
+<div class="subtitle">تابع أموالك وإيرادات ومصروفات YT Technology</div>
+
+<section class="cards">
+<div class="card"><small>إجمالي الرصيد</small><div class="amount blue" id="balance">0 EGP</div></div>
+<div class="card"><small>الإيرادات</small><div class="amount green" id="income">0 EGP</div></div>
+<div class="card"><small>المصروفات</small><div class="amount red" id="expenses">0 EGP</div></div>
+<div class="card"><small>صافي الربح</small><div class="amount" id="profit">0 EGP</div></div>
+</section>
+
+<section class="content">
+<div class="panel">
+<h2>إضافة معاملة جديدة</h2>
+<form id="transactionForm">
+<label>نوع المعاملة</label>
+<select id="type"><option value="income">إيراد</option><option value="expense">مصروف</option></select>
+<label>وصف المعاملة</label>
+<input id="description" placeholder="مثال: تصميم موقع" required maxlength="80">
+<label>المبلغ بالجنيه المصري</label>
+<input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required>
+<label>التاريخ</label>
+<input id="date" type="date" required>
+<button class="primary" type="submit">+ إضافة المعاملة</button>
+</form>
+</div>
+
+<div class="panel">
+<h2>ملخص الحساب</h2>
+<p class="tag">إجمالي العمليات المسجلة</p>
+<div class="amount blue" id="count">0</div>
+<p class="tag" style="margin-top:28px">صافي حركة الأموال</p>
+<div class="amount" id="net">0 EGP</div>
+<div class="actions">
+<button class="secondary" id="export">تصدير CSV</button>
+<button class="secondary" id="clear">مسح كل البيانات</button>
+</div>
+<p class="tag" style="margin-top:20px">البيانات محفوظة محليًا على هذا الجهاز.</p>
+</div>
+</section>
+
+<section class="panel transactions">
+<h2>سجل المعاملات</h2>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>الوصف</th><th>النوع</th><th>التاريخ</th><th>المبلغ</th><th></th></tr></thead>
+<tbody id="list"></tbody>
+</table>
+</div>
+</section>
+<footer>YT FINANCE © 2026 — YT TECHNOLOGY</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let transactions=[];
+try{transactions=JSON.parse(localStorage.getItem("yt_finance_data")||"[]")}catch(e){transactions=[]}
+$("date").value=new Date().toISOString().slice(0,10);
+
+function money(n){return n.toLocaleString("en-EG",{maximumFractionDigits:2})+" EGP"}
+function save(){localStorage.setItem("yt_finance_data",JSON.stringify(transactions));render()}
+function render(){
+let income=0,expenses=0;
+transactions.forEach(t=>{if(t.type==="income")income+=t.amount;else expenses+=t.amount});
+let balance=income-expenses;
+$("balance").textContent=money(balance);
+$("income").textContent=money(income);
+$("expenses").textContent=money(expenses);
+$("profit").textContent=money(balance);
+$("net").textContent=money(balance);
+$("count").textContent=transactions.length;
+$("profit").className="amount "+(balance>=0?"green":"red");
+$("net").className="amount "+(balance>=0?"green":"red");
+$("list").innerHTML="";
+if(!transactions.length){$("list").innerHTML='<tr><td colspan="5" class="empty">لا توجد معاملات حتى الآن</td></tr>';return}
+[...transactions].reverse().forEach(t=>{
+let tr=document.createElement("tr");
+let cells=[t.description,t.type==="income"?"إيراد":"مصروف",t.date,money(t.amount)];
+cells.forEach((v,i)=>{let td=document.createElement("td");td.textContent=v;if(i===3)td.style.color=t.type==="income"?"var(--green)":"var(--red)";tr.appendChild(td)});
+let td=document.createElement("td"),btn=document.createElement("button");
+btn.className="delete";btn.textContent="حذف";
+btn.onclick=()=>{if(confirm("حذف هذه المعاملة؟")){transactions=transactions.filter(x=>x.id!==t.id);save()}};
+td.appendChild(btn);tr.appendChild(td);$("list").appendChild(tr);
+});
+}
+$("transactionForm").onsubmit=e=>{
+e.preventDefault();
+let amount=Number($("amount").value);
+if(!Number.isFinite(amount)||amount<=0)return alert("أدخل مبلغًا صحيحًا");
+transactions.push({id:crypto.randomUUID(),type:$("type").value,description:$("description").value.trim(),amount,date:$("date").value});
+save();e.target.reset();$("date").value=new Date().toISOString().slice(0,10);
+};
+$("clear").onclick=()=>{if(confirm("هل أنت متأكد من مسح كل المعاملات؟")){transactions=[];save()}};
+$("export").onclick=()=>{
+let rows=[["Description","Type","Date","Amount"],...transactions.map(t=>[t.description,t.type,t.date,t.amount])];
+let csv="\uFEFF"+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download="YT-Finance.csv";a.click();URL.revokeObjectURL(a.href);
+};
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+render();
+</script>
+</body>
+</html>
